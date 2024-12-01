@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>ATD3.5-S3 Electronic Shelf Label (ESL) Configs</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        body {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            background: rgb(241, 196, 15);
+            background: linear-gradient(126deg, rgba(241, 196, 15, 1) 0%, rgba(46, 204, 113, 1) 100%);
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .main {
+            max-width: 800px;
+            display: flex;
+            flex-direction: row;
+            background-color: #FFF;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 10px 10px 20px rgb(0 0 0 / 9%);
+        }
+
+        .image-preview-box {
+            padding-right: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .preview {
+            width: 180px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .input-group {
+            min-width: 400px;
+            padding-left: 10px;
+        }
+
+        .input-group>div {
+            margin-bottom: 10px;
+        }
+
+        .input-group>div>label {
+            display: block;
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
+
+        button {
+            border-radius: 5px;
+            background-color: #2c3e50;
+            color: #FFF;
+            font-size: 14px;
+            border: none;
+            padding: 6px 12px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #273746;
+        }
+
+        input {
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #b3b6b7;
+        }
+
+        footer {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            color: #FFF;
+            font-size: 14px;
+        }
+
+        footer a {
+            color: #FFF;
+        }
+
+        #imageInput {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <section class="main">
+        <div class="image-preview-box">
+            <img class="preview" src="" />
+            <button id="select-new-image">Select</button>
+            <input type="file" id="imageInput" accept="image/*">
+        </div>
+        <div class="input-group">
+            <div>
+                <label for="name">Name</label>
+                <input name="name" id="name" />
+            </div>
+            <div>
+                <label for="detail">Detail</label>
+                <input name="detail" id="detail" style="width: 100%;" />
+            </div>
+            <div>
+                <label for="price">Price</label>
+                <input name="price" id="price" type="number" style="width: 60px;" />
+            </div>
+            <div>
+                <label for="code">Barcode</label>
+                <input name="code" id="code" />
+            </div>
+            <button id="save">Save</button>
+        </div>
+    </section>
+    <footer>Dev by <a href="https://www.artronshop.co.th" target="_blank">ArtronShop</a></footer>
+
+
+    <script>
+        const selectImageBtn = document.querySelector("#select-new-image");
+        const imageInput = document.querySelector("#imageInput");
+        const preview = document.querySelector("img.preview");
+        const canvas = document.createElement("canvas");
+        const saveBtn = document.querySelector("#save");
+        let change_image = false;
+
+        selectImageBtn.addEventListener('click', function () {
+            imageInput.click();
+        });
+
+        imageInput.addEventListener("change", e => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const img = new Image();
+                    img.onload = function () {
+                        const maxWidth = 180; // Max Width
+                        const maxHeight = 300; // Max Height
+                        let width = img.width;
+                        let height = img.height;
+
+                        // Calc new image size
+                        if (width > maxWidth || height > maxHeight) {
+                            if (width / height > maxWidth / maxHeight) {
+                                height = (maxWidth / width) * height;
+                                width = maxWidth;
+                            } else {
+                                width = (maxHeight / height) * width;
+                                height = maxHeight;
+                            }
+                        }
+
+                        // Resize iamge with canvas
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        // Convert canvas to Data URL and show image preview
+                        const resizedDataUrl = canvas.toDataURL('image/png');
+                        preview.src = resizedDataUrl;
+                        preview.style.display = 'block';
+                    };
+
+                    img.src = e.target.result;
+                    change_image = true;
+                };
+
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function dataURItoBlob(dataURI) {
+            // convert base64/URLEncoded data component to raw binary data held in a string
+            var byteString;
+            if (dataURI.split(',')[0].indexOf('base64') >= 0)
+                byteString = atob(dataURI.split(',')[1]);
+            else
+                byteString = unescape(dataURI.split(',')[1]);
+
+            // separate out the mime component
+            var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+
+            // write the bytes of the string to a typed array
+            var ia = new Uint8Array(byteString.length);
+            for (var i = 0; i < byteString.length; i++) {
+                ia[i] = byteString.charCodeAt(i);
+            }
+
+            return new Blob([ia], { type: mimeString });
+        }
+
+        const host = "http://192.168.68.113";
+
+        saveBtn.addEventListener('click', function () {
+            let formData = new FormData();
+            for (const key of ["name", "detail", "price", "code"]) {
+                formData.append(key, document.querySelector("#" + key).value);
+            }
+            if (change_image) {
+                const blob = dataURItoBlob(preview.src);
+                formData.append("image", blob);
+            }
+
+            fetch(host + "/save", {
+                body: formData,
+                method: "post"
+            }).then(async () => {
+                window.alert("OK !");
+            });
+        });
+    </script>
+</body>
+
+</html>

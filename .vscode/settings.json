@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "typeinfo": "cpp",
+        "array": "cpp",
+        "string": "cpp",
+        "string_view": "cpp",
+        "span": "cpp"
+    },
+    "cmake.sourceDirectory": "C:/Users/sonth/Downloads/ATD3.5-S3-Electronic-Shelf-Label-PIO/lib/ArduinoJson-7.2.1"
+}
